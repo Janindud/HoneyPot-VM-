@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+env_local/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.ppk
+*.key
+id_rsa*
+id_ed25519*
+
+# Runtime logs and captured honeypot data
+*.log
+cowrie.json
+cowrie.json.*
+var/
+log/
+logs/
+downloads/
+tty/
+
+# Databases, dumps, and generated artifacts
+*.db
+*.sqlite
+*.sql.gz
+*.dump
+*.bak
+*.zip
+*.tar
+*.tar.gz
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
