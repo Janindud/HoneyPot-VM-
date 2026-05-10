@@ -31,7 +31,7 @@ src/
   ml/cluster.py
   ml/forecast.py
 requirements.txt
-SUBMISSION_2_DAY_PLAN.md
+SUBMISSION_4_DAY_PLAN.md
 ```
 
 ## Environment Variables
