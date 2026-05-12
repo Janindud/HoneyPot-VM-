@@ -44,7 +44,7 @@
                       "editorMode": "code",
                       "format": "time_series",
                       "rawQuery": true,
-                      "rawSql": "SELECT $__timeGroupAlias(s.start_time, '5m'), COUNT(s.session_id) AS attacks FROM sessions s JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(s.start_time) GROUP BY 1 ORDER BY 1",
+                      "rawSql": "SELECT $__timeGroupAlias(s.start_time, '1h'), COUNT(s.session_id) AS attacks FROM sessions s JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(s.start_time) GROUP BY 1 ORDER BY 1",
                       "sql": {
                         "columns": [
                           {
@@ -73,7 +73,7 @@
             "transformations": []
           }
         },
-        "description": "Cowrie sessions grouped into 5 minute buckets using the selected dashboard time range.",
+        "description": "",
         "id": 1,
         "links": [],
         "title": "Active Attacks Over Time",
@@ -178,7 +178,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT a.src_ip, ROUND(a.risk_score, 2) AS ml_risk_score, COUNT(DISTINCT s.session_id) AS attack_count, COALESCE(a.cluster_group, -1) AS cluster_group, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) GROUP BY a.ip_id, a.src_ip, a.risk_score, a.cluster_group, a.country ORDER BY ml_risk_score DESC, attack_count DESC LIMIT 10"
+                      "rawSql": "SELECT a.src_ip, a.risk_score AS ml_risk_score, COUNT(s.session_id) AS attack_count, a.cluster_group, a.country FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) GROUP BY a.src_ip, a.risk_score, a.cluster_group, a.country ORDER BY a.risk_score DESC LIMIT 10"
                     },
                     "version": "v0"
                   },
@@ -190,7 +190,7 @@
             "transformations": []
           }
         },
-        "description": "Source IPs ranked by ML risk score for the selected time range.",
+        "description": "",
         "id": 2,
         "links": [],
         "title": "Top High-Risk Hacking IPs",
@@ -267,18 +267,25 @@
             "transformations": []
           }
         },
-        "description": "Usernames used most often in Cowrie login attempts for the selected time range.",
+        "description": "",
         "id": 3,
         "links": [],
         "title": "Top Targeted Usernames",
         "vizConfig": {
-          "group": "bargauge",
+          "group": "table",
           "kind": "VizConfig",
           "spec": {
             "fieldConfig": {
               "defaults": {
-                "color": {
-                  "mode": "palette-classic"
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
                 },
                 "thresholds": {
                   "mode": "absolute",
@@ -297,26 +304,8 @@
               "overrides": []
             },
             "options": {
-              "displayMode": "basic",
-              "legend": {
-                "calcs": [],
-                "displayMode": "list",
-                "placement": "bottom",
-                "showLegend": false
-              },
-              "maxVizHeight": 300,
-              "minVizHeight": 16,
-              "minVizWidth": 8,
-              "namePlacement": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [],
-                "fields": "",
-                "values": true
-              },
-              "showUnfilled": true,
-              "sizing": "auto",
-              "valueMode": "color"
+              "cellHeight": "sm",
+              "showHeader": true
             }
           },
           "version": "13.0.1"
@@ -373,7 +362,7 @@
             "transformations": []
           }
         },
-        "description": "Successful fake Cowrie honeypot logins in the last 5 minutes. These are not real VM logins.",
+        "description": "",
         "id": 4,
         "links": [],
         "title": "Successful Logins Last 5m",
@@ -694,7 +683,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, COUNT(DISTINCT a.src_ip) AS attacker_ips, COUNT(DISTINCT s.session_id) AS attack_sessions, ROUND(AVG(a.risk_score), 2) AS avg_risk FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) GROUP BY COALESCE(NULLIF(a.country, ''), 'Unknown') ORDER BY attacker_ips DESC, attack_sessions DESC LIMIT 10"
+                      "rawSql": "SELECT a.country, COUNT(DISTINCT a.src_ip) AS attacker_ips, COUNT(s.session_id) AS attack_sessions, ROUND(AVG(a.risk_score), 2) AS avg_risk FROM attackers a LEFT JOIN sessions s ON a.ip_id = s.ip_id WHERE a.country IS NOT NULL GROUP BY a.country ORDER BY attacker_ips DESC, attack_sessions DESC LIMIT 10"
                     },
                     "version": "v0"
                   },
@@ -706,7 +695,7 @@
             "transformations": []
           }
         },
-        "description": "Country is based on source IP geolocation, not guaranteed attacker nationality.",
+        "description": "",
         "id": 6,
         "links": [],
         "title": "Countries Attacking This VM",
@@ -744,13 +733,7 @@
             },
             "options": {
               "cellHeight": "sm",
-              "showHeader": true,
-              "sortBy": [
-                {
-                  "desc": true,
-                  "displayName": "attacker_ips"
-                }
-              ]
+              "showHeader": true
             }
           },
           "version": "13.0.1"
@@ -777,7 +760,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT aa.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, aa.username, aa.password, CASE WHEN aa.is_success = 1 THEN 'success' ELSE 'failed' END AS result FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(aa.timestamp) ORDER BY aa.timestamp DESC LIMIT 20"
+                      "rawSql": "SELECT aa.timestamp, a.src_ip, a.country, aa.username, aa.password, CASE WHEN aa.is_success = 1 THEN 'success' ELSE 'failed' END AS result FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(aa.timestamp) ORDER BY aa.timestamp DESC LIMIT 20"
                     },
                     "version": "v0"
                   },
@@ -789,7 +772,7 @@
             "transformations": []
           }
         },
-        "description": "Latest captured username/password attempts inside the Cowrie honeypot.",
+        "description": "",
         "id": 7,
         "links": [],
         "title": "Latest Cowrie Login Attempts",
@@ -854,7 +837,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT c.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, c.input AS command FROM commands c JOIN sessions s ON c.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(c.timestamp) ORDER BY c.timestamp DESC LIMIT 30"
+                      "rawSql": "SELECT c.timestamp, a.src_ip, a.country, c.input AS command FROM commands c JOIN sessions s ON c.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(c.timestamp) ORDER BY c.timestamp DESC LIMIT 30"
                     },
                     "version": "v0"
                   },
@@ -866,7 +849,7 @@
             "transformations": []
           }
         },
-        "description": "Commands typed after successful fake Cowrie login.",
+        "description": "",
         "id": 8,
         "links": [],
         "title": "Commands Captured in Honeypot",
@@ -931,7 +914,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, MIN(s.start_time) AS first_seen, MAX(s.start_time) AS last_seen, COUNT(DISTINCT s.session_id) AS sessions, COUNT(aa.attempt_id) AS login_attempts, SUM(CASE WHEN aa.is_success = 1 THEN 1 ELSE 0 END) AS successful_logins, ROUND(a.risk_score, 2) AS risk_score, COALESCE(a.cluster_group, -1) AS cluster_group FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id LEFT JOIN auth_attempts aa ON s.session_id = aa.session_id WHERE $__timeFilter(s.start_time) GROUP BY a.ip_id, a.src_ip, a.country, a.risk_score, a.cluster_group ORDER BY last_seen DESC LIMIT 20"
+                      "rawSql": "SELECT predicted_volume AS predicted_attacks_next_hour\nFROM predictions\nWHERE forecast_run_id = (\n  SELECT forecast_run_id\n  FROM predictions\n  WHERE forecast_run_id IS NOT NULL\n  ORDER BY created_at DESC, prediction_id DESC\n  LIMIT 1\n)\nORDER BY\n  CASE WHEN hour_target > NOW() THEN 0 ELSE 1 END,\n  CASE WHEN hour_target > NOW() THEN hour_target END ASC,\n  hour_target DESC\nLIMIT 1"
                     },
                     "version": "v0"
                   },
@@ -943,25 +926,18 @@
             "transformations": []
           }
         },
-        "description": "Real public source IPs that connected to Cowrie in the selected time range.",
+        "description": "Nearest future prediction from the latest 24-hour forecasting run.",
         "id": 9,
         "links": [],
-        "title": "Who Attacked This VM",
+        "title": "Next Hour Attack Prediction",
         "vizConfig": {
-          "group": "table",
+          "group": "stat",
           "kind": "VizConfig",
           "spec": {
             "fieldConfig": {
               "defaults": {
-                "custom": {
-                  "align": "auto",
-                  "cellOptions": {
-                    "type": "auto"
-                  },
-                  "footer": {
-                    "reducers": []
-                  },
-                  "inspect": false
+                "color": {
+                  "mode": "thresholds"
                 },
                 "thresholds": {
                   "mode": "absolute",
@@ -971,17 +947,35 @@
                       "value": 0
                     },
                     {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
                       "color": "red",
-                      "value": 80
+                      "value": 30
                     }
                   ]
-                }
+                },
+                "unit": "short"
               },
               "overrides": []
             },
             "options": {
-              "cellHeight": "sm",
-              "showHeader": true
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
             }
           },
           "version": "13.0.1"
@@ -1008,7 +1002,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT created_at AS generated_at, hour_target AS predicted_hour, horizon_hours, predicted_volume AS predicted_attacks, confidence_lower AS low_estimate, confidence_upper AS high_estimate, risk_level, model_name FROM predictions WHERE forecast_run_id = (SELECT forecast_run_id FROM predictions WHERE forecast_run_id IS NOT NULL ORDER BY created_at DESC, prediction_id DESC LIMIT 1) AND hour_target > NOW() ORDER BY hour_target ASC LIMIT 24"
+                      "rawSql": "SELECT\n  hour_target AS predicted_hour,\n  horizon_hours,\n  predicted_volume AS predicted_attacks,\n  confidence_lower AS low_estimate,\n  confidence_upper AS high_estimate,\n  risk_level,\n  model_name\nFROM predictions\nWHERE forecast_run_id = (\n  SELECT forecast_run_id\n  FROM predictions\n  WHERE forecast_run_id IS NOT NULL\n  ORDER BY created_at DESC, prediction_id DESC\n  LIMIT 1\n)\n  AND hour_target > NOW()\nORDER BY hour_target ASC\nLIMIT 24"
                     },
                     "version": "v0"
                   },
@@ -1020,7 +1014,7 @@
             "transformations": []
           }
         },
-        "description": "Next-24-hour Cowrie attack forecast with model name, confidence range, and risk label. Uses LSTM when enough history exists and a weighted recent/seasonal baseline for small viva datasets.",
+        "description": "Latest future Cowrie forecast with confidence range, risk level, and model source.",
         "id": 10,
         "links": [],
         "title": "Future Attack Prediction (Next 24h)",
@@ -1077,8 +1071,8 @@
               "kind": "ElementReference",
               "name": "panel-1"
             },
-            "height": 9,
-            "width": 11,
+            "height": 8,
+            "width": 12,
             "x": 0,
             "y": 0
           }
@@ -1090,9 +1084,9 @@
               "kind": "ElementReference",
               "name": "panel-2"
             },
-            "height": 9,
-            "width": 13,
-            "x": 11,
+            "height": 8,
+            "width": 12,
+            "x": 12,
             "y": 0
           }
         },
@@ -1104,9 +1098,9 @@
               "name": "panel-3"
             },
             "height": 8,
-            "width": 8,
+            "width": 7,
             "x": 0,
-            "y": 9
+            "y": 8
           }
         },
         {
@@ -1117,22 +1111,9 @@
               "name": "panel-4"
             },
             "height": 8,
-            "width": 7,
-            "x": 8,
-            "y": 9
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-5"
-            },
-            "height": 8,
-            "width": 9,
-            "x": 15,
-            "y": 9
+            "width": 5,
+            "x": 7,
+            "y": 8
           }
         },
         {
@@ -1142,36 +1123,10 @@
               "kind": "ElementReference",
               "name": "panel-6"
             },
-            "height": 10,
-            "width": 12,
-            "x": 0,
-            "y": 17
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-9"
-            },
-            "height": 10,
+            "height": 8,
             "width": 12,
             "x": 12,
-            "y": 17
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-7"
-            },
-            "height": 9,
-            "width": 24,
-            "x": 0,
-            "y": 27
+            "y": 8
           }
         },
         {
@@ -1181,10 +1136,49 @@
               "kind": "ElementReference",
               "name": "panel-8"
             },
-            "height": 10,
+            "height": 8,
+            "width": 10,
+            "x": 0,
+            "y": 16
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-7"
+            },
+            "height": 8,
+            "width": 14,
+            "x": 10,
+            "y": 16
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-5"
+            },
+            "height": 9,
             "width": 24,
             "x": 0,
-            "y": 36
+            "y": 24
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-9"
+            },
+            "height": 8,
+            "width": 7,
+            "x": 0,
+            "y": 33
           }
         },
         {
@@ -1195,9 +1189,9 @@
               "name": "panel-10"
             },
             "height": 8,
-            "width": 24,
-            "x": 0,
-            "y": 46
+            "width": 17,
+            "x": 7,
+            "y": 33
           }
         }
       ]
@@ -1209,11 +1203,7 @@
   "tags": [
     "cowrie",
     "ml",
-    "honeypot",
-    "real-attacks",
-    "viva",
-    "prediction",
-    "forecast"
+    "honeypot"
   ],
   "timeSettings": {
     "autoRefresh": "5s",
