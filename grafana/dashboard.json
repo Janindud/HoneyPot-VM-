@@ -445,7 +445,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT CASE WHEN cluster_group = -1 THEN 'new_unprocessed' ELSE CONCAT('cluster_', cluster_group) END AS cluster_group, COUNT(ip_id) AS total_attackers, ROUND(AVG(risk_score), 2) AS avg_risk, ROUND(MIN(risk_score), 2) AS min_risk, ROUND(MAX(risk_score), 2) AS max_risk FROM attackers WHERE cluster_group IS NOT NULL AND src_ip = '112.134.162.209' GROUP BY cluster_group ORDER BY avg_risk DESC, total_attackers DESC"
+                      "rawSql": "SELECT CASE WHEN a.cluster_group = -1 THEN 'New / not clustered' ELSE CONCAT('Cluster ', a.cluster_group) END AS cluster, CASE WHEN a.cluster_group = -1 THEN 'Unprocessed' WHEN AVG(a.risk_score) >= 50 THEN 'High' WHEN AVG(a.risk_score) >= 20 THEN 'Medium' WHEN AVG(a.risk_score) > 0 THEN 'Low' ELSE 'Unprocessed' END AS risk_level, COUNT(DISTINCT a.src_ip) AS attacker_ips, COUNT(DISTINCT s.session_id) AS sessions, ROUND(AVG(a.risk_score), 2) AS avg_risk, ROUND(MAX(a.risk_score), 2) AS max_risk FROM attackers a LEFT JOIN sessions s ON a.ip_id = s.ip_id WHERE a.cluster_group IS NOT NULL GROUP BY a.cluster_group ORDER BY avg_risk DESC, attacker_ips DESC"
                     },
                     "version": "v0"
                   },
@@ -457,10 +457,10 @@
             "transformations": []
           }
         },
-        "description": "K-Means behavior groups. Cluster number is only a label; avg_risk shows the dangerous group. -1 means new/unprocessed.",
+        "description": "K-Means attacker groups with risk level, attacker IP count, session count, and color-gauge risk scores. Cluster number is a model label; avg_risk shows severity.",
         "id": 5,
         "links": [],
-        "title": "Risk Clusters",
+        "title": "Risk Clusters (K-Means)",
         "vizConfig": {
           "group": "table",
           "kind": "VizConfig",
@@ -491,10 +491,182 @@
                   ]
                 }
               },
-              "overrides": []
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "avg_risk"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "percent"
+                    },
+                    {
+                      "id": "decimals",
+                      "value": 1
+                    },
+                    {
+                      "id": "min",
+                      "value": 0
+                    },
+                    {
+                      "id": "max",
+                      "value": 100
+                    },
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "gauge",
+                        "mode": "gradient",
+                        "valueDisplayMode": "color"
+                      }
+                    },
+                    {
+                      "id": "thresholds",
+                      "value": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": 0
+                          },
+                          {
+                            "color": "yellow",
+                            "value": 20
+                          },
+                          {
+                            "color": "orange",
+                            "value": 50
+                          },
+                          {
+                            "color": "red",
+                            "value": 75
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "max_risk"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "percent"
+                    },
+                    {
+                      "id": "decimals",
+                      "value": 1
+                    },
+                    {
+                      "id": "min",
+                      "value": 0
+                    },
+                    {
+                      "id": "max",
+                      "value": 100
+                    },
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "gauge",
+                        "mode": "gradient",
+                        "valueDisplayMode": "color"
+                      }
+                    },
+                    {
+                      "id": "thresholds",
+                      "value": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": 0
+                          },
+                          {
+                            "color": "yellow",
+                            "value": 20
+                          },
+                          {
+                            "color": "orange",
+                            "value": 50
+                          },
+                          {
+                            "color": "red",
+                            "value": 75
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "risk_level"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "color-background"
+                      }
+                    },
+                    {
+                      "id": "mappings",
+                      "value": [
+                        {
+                          "type": "value",
+                          "options": {
+                            "High": {
+                              "color": "red",
+                              "index": 0,
+                              "text": "High"
+                            }
+                          }
+                        },
+                        {
+                          "type": "value",
+                          "options": {
+                            "Medium": {
+                              "color": "orange",
+                              "index": 1,
+                              "text": "Medium"
+                            }
+                          }
+                        },
+                        {
+                          "type": "value",
+                          "options": {
+                            "Low": {
+                              "color": "green",
+                              "index": 2,
+                              "text": "Low"
+                            }
+                          }
+                        },
+                        {
+                          "type": "value",
+                          "options": {
+                            "Unprocessed": {
+                              "color": "blue",
+                              "index": 3,
+                              "text": "Unprocessed"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             },
             "options": {
-              "cellHeight": "sm",
+              "cellHeight": "md",
               "showHeader": true
             }
           },
