@@ -44,7 +44,7 @@
                       "editorMode": "code",
                       "format": "time_series",
                       "rawQuery": true,
-                      "rawSql": "SELECT $__timeGroupAlias(start_time, '5m'), COUNT(session_id) AS attacks FROM sessions WHERE $__timeFilter(start_time) GROUP BY 1 ORDER BY 1",
+                      "rawSql": "SELECT $__timeGroupAlias(s.start_time, '5m'), COUNT(s.session_id) AS attacks FROM sessions s JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(s.start_time) AND a.src_ip = '112.134.162.209' GROUP BY 1 ORDER BY 1",
                       "sql": {
                         "columns": [
                           {
@@ -178,7 +178,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT a.src_ip, ROUND(a.risk_score, 2) AS ml_risk_score, COUNT(DISTINCT s.session_id) AS attack_count, COALESCE(a.cluster_group, -1) AS cluster_group, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) GROUP BY a.ip_id, a.src_ip, a.risk_score, a.cluster_group, a.country ORDER BY ml_risk_score DESC, attack_count DESC LIMIT 10"
+                      "rawSql": "SELECT a.src_ip, ROUND(a.risk_score, 2) AS ml_risk_score, COUNT(DISTINCT s.session_id) AS attack_count, COALESCE(a.cluster_group, -1) AS cluster_group, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) AND a.src_ip = '112.134.162.209' GROUP BY a.ip_id, a.src_ip, a.risk_score, a.cluster_group, a.country ORDER BY ml_risk_score DESC, attack_count DESC LIMIT 10"
                     },
                     "version": "v0"
                   },
@@ -255,7 +255,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT username, COUNT(*) AS attempts FROM auth_attempts WHERE $__timeFilter(timestamp) GROUP BY username ORDER BY attempts DESC LIMIT 10"
+                      "rawSql": "SELECT aa.username, COUNT(*) AS attempts FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(aa.timestamp) AND a.src_ip = '112.134.162.209' GROUP BY aa.username ORDER BY attempts DESC LIMIT 10"
                     },
                     "version": "v0"
                   },
@@ -344,7 +344,7 @@
                       "editorMode": "code",
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT COUNT(*) AS successful_logins_last_5m FROM auth_attempts WHERE is_success = 1 AND timestamp >= (NOW() - INTERVAL 5 MINUTE)",
+                      "rawSql": "SELECT COUNT(*) AS successful_logins_last_5m FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE aa.is_success = 1 AND aa.timestamp >= (NOW() - INTERVAL 5 MINUTE) AND a.src_ip = '112.134.162.209'",
                       "sql": {
                         "columns": [
                           {
@@ -445,7 +445,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT CASE WHEN cluster_group = -1 THEN 'new_unprocessed' ELSE CONCAT('cluster_', cluster_group) END AS cluster_group, COUNT(ip_id) AS total_attackers, ROUND(AVG(risk_score), 2) AS avg_risk, ROUND(MIN(risk_score), 2) AS min_risk, ROUND(MAX(risk_score), 2) AS max_risk FROM attackers WHERE cluster_group IS NOT NULL GROUP BY cluster_group ORDER BY avg_risk DESC, total_attackers DESC"
+                      "rawSql": "SELECT CASE WHEN cluster_group = -1 THEN 'new_unprocessed' ELSE CONCAT('cluster_', cluster_group) END AS cluster_group, COUNT(ip_id) AS total_attackers, ROUND(AVG(risk_score), 2) AS avg_risk, ROUND(MIN(risk_score), 2) AS min_risk, ROUND(MAX(risk_score), 2) AS max_risk FROM attackers WHERE cluster_group IS NOT NULL AND src_ip = '112.134.162.209' GROUP BY cluster_group ORDER BY avg_risk DESC, total_attackers DESC"
                     },
                     "version": "v0"
                   },
@@ -522,7 +522,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, COUNT(DISTINCT a.src_ip) AS attacker_ips, COUNT(DISTINCT s.session_id) AS attack_sessions, ROUND(AVG(a.risk_score), 2) AS avg_risk FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) GROUP BY COALESCE(NULLIF(a.country, ''), 'Unknown') ORDER BY attacker_ips DESC, attack_sessions DESC LIMIT 10"
+                      "rawSql": "SELECT COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, COUNT(DISTINCT a.src_ip) AS attacker_ips, COUNT(DISTINCT s.session_id) AS attack_sessions, ROUND(AVG(a.risk_score), 2) AS avg_risk FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id WHERE $__timeFilter(s.start_time) AND a.src_ip = '112.134.162.209' GROUP BY COALESCE(NULLIF(a.country, ''), 'Unknown') ORDER BY attacker_ips DESC, attack_sessions DESC LIMIT 10"
                     },
                     "version": "v0"
                   },
@@ -605,7 +605,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT aa.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, aa.username, aa.password, CASE WHEN aa.is_success = 1 THEN 'success' ELSE 'failed' END AS result FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(aa.timestamp) ORDER BY aa.timestamp DESC LIMIT 20"
+                      "rawSql": "SELECT aa.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, aa.username, aa.password, CASE WHEN aa.is_success = 1 THEN 'success' ELSE 'failed' END AS result FROM auth_attempts aa JOIN sessions s ON aa.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(aa.timestamp) AND a.src_ip = '112.134.162.209' ORDER BY aa.timestamp DESC LIMIT 20"
                     },
                     "version": "v0"
                   },
@@ -682,7 +682,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT c.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, c.input AS command FROM commands c JOIN sessions s ON c.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(c.timestamp) ORDER BY c.timestamp DESC LIMIT 30"
+                      "rawSql": "SELECT c.timestamp, a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, c.input AS command FROM commands c JOIN sessions s ON c.session_id = s.session_id JOIN attackers a ON s.ip_id = a.ip_id WHERE $__timeFilter(c.timestamp) AND a.src_ip = '112.134.162.209' ORDER BY c.timestamp DESC LIMIT 30"
                     },
                     "version": "v0"
                   },
@@ -759,7 +759,7 @@
                     "spec": {
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "SELECT a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, MIN(s.start_time) AS first_seen, MAX(s.start_time) AS last_seen, COUNT(DISTINCT s.session_id) AS sessions, COUNT(aa.auth_id) AS login_attempts, SUM(CASE WHEN aa.is_success = 1 THEN 1 ELSE 0 END) AS successful_logins, ROUND(a.risk_score, 2) AS risk_score, COALESCE(a.cluster_group, -1) AS cluster_group FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id LEFT JOIN auth_attempts aa ON s.session_id = aa.session_id WHERE $__timeFilter(s.start_time) GROUP BY a.ip_id, a.src_ip, a.country, a.risk_score, a.cluster_group ORDER BY last_seen DESC LIMIT 20"
+                      "rawSql": "SELECT a.src_ip, COALESCE(NULLIF(a.country, ''), 'Unknown') AS country, MIN(s.start_time) AS first_seen, MAX(s.start_time) AS last_seen, COUNT(DISTINCT s.session_id) AS sessions, COUNT(aa.attempt_id) AS login_attempts, SUM(CASE WHEN aa.is_success = 1 THEN 1 ELSE 0 END) AS successful_logins, ROUND(a.risk_score, 2) AS risk_score, COALESCE(a.cluster_group, -1) AS cluster_group FROM attackers a JOIN sessions s ON a.ip_id = s.ip_id LEFT JOIN auth_attempts aa ON s.session_id = aa.session_id WHERE $__timeFilter(s.start_time) AND a.src_ip = '112.134.162.209' GROUP BY a.ip_id, a.src_ip, a.country, a.risk_score, a.cluster_group ORDER BY last_seen DESC LIMIT 20"
                     },
                     "version": "v0"
                   },
@@ -1063,6 +1063,6 @@
     "timezone": "browser",
     "to": "now"
   },
-  "title": "Cowrie ML SOC Dashboard",
+  "title": "Cowrie ML SOC Dashboard - My Attack Only",
   "variables": []
 }
