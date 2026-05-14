@@ -34,7 +34,6 @@ src/
   ml/forecast.py
   ops/fix_live_dashboard.ps1
 requirements.txt
-SUBMISSION_4_DAY_PLAN.md
 ```
 
 ## Environment Variables
