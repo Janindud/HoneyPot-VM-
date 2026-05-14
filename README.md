@@ -24,12 +24,15 @@ src/
   api/server.py
   dashboard/app.py
   db/schema.sql
+  db/performance_indexes.sql
   db/views.sql
   etl/backfill.py
   etl/geolocate.py
   etl/ingest.py
+  grafana/stabilize_dashboard.py
   ml/cluster.py
   ml/forecast.py
+  ops/fix_live_dashboard.ps1
 requirements.txt
 SUBMISSION_4_DAY_PLAN.md
 ```
@@ -58,6 +61,7 @@ pip install -r requirements.txt
 ```powershell
 mysql -u root -p < src\db\schema.sql
 mysql -u root -p cowrie_prod < src\db\views.sql
+mysql -u root -p cowrie_prod < src\db\performance_indexes.sql
 ```
 
 ## Run Pipeline Components
@@ -71,6 +75,14 @@ python src\ml\cluster.py
 python src\ml\forecast.py
 uvicorn src.api.server:app --host 0.0.0.0 --port 8000
 streamlit run src\dashboard\app.py
+```
+
+## Grafana Dashboard Repair
+
+The production dashboard can be stabilized after deployment by applying the optimized MySQL indexes and Grafana panel queries.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\src\ops\fix_live_dashboard.ps1
 ```
 
 ## Main API Endpoints

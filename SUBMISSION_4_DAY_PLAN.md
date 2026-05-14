@@ -23,6 +23,8 @@ Evidence to capture:
 
 ## Day 2 - 12 May 2026: Cowrie, ETL, and Database Test
 
+Status: Completed. The real Cowrie pipeline was checked from Cowrie JSON events through ETL, MySQL, geolocation, and dashboard data.
+
 - Run Cowrie on the VM and confirm it writes JSON log events.
 - Generate controlled authorized test login attempts against the Cowrie port.
 - Run ETL ingestion and confirm new rows appear in `attackers`, `sessions`, and `auth_attempts`.
@@ -38,6 +40,8 @@ Evidence to capture:
 
 ## Day 3 - 13 May 2026: ML, API, and Grafana Evidence
 
+Status: Completed. The ML clustering, prediction output, FastAPI health check, and Grafana dashboard evidence were prepared for the source submission.
+
 - Run K-Means clustering and confirm `cluster_group` and `risk_score` update.
 - Run the forecast pipeline and confirm the latest 24 prediction rows are created.
 - Start FastAPI and test `/`, `/attackers`, `/attackers/clusters`, `/threats/active`, and `/predictions`.
@@ -52,6 +56,8 @@ Evidence to capture:
 - Grafana dashboard screenshots.
 
 ## Day 4 - 14 May 2026: Final Report, Export, and Backup
+
+Status: Completed for source submission. The repository was refreshed with the latest live-dashboard repair files, optimized database indexes, and final submission notes.
 
 - Add the GitHub repository link to the final report appendix.
 - Add the required source-code submission link.
