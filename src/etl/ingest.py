@@ -102,15 +102,6 @@ def tail_f(filepath, read_from_start=False, follow=True):
                     print(f"Detected Cowrie log rotation; reopening {filepath}...")
                     break
 
-        while True:
-            line = f.readline()
-            if not line:
-                if not follow:
-                    break
-                time.sleep(0.5)
-                continue
-            yield line
-
 # ==========================================
 # DATABASE OPERATION FUNCTIONS
 # ==========================================
@@ -128,6 +119,13 @@ def get_or_create_attacker(cursor, ip, reader):
         (ip, country)
     )
     return cursor.lastrowid
+
+def touch_attacker(cursor, ip_id, ts):
+    """Update attacker activity time using the event timestamp."""
+    cursor.execute(
+        "UPDATE attackers SET last_seen = GREATEST(COALESCE(last_seen, %s), %s) WHERE ip_id = %s",
+        (ts, ts, ip_id),
+    )
 
 def check_session_exists(cursor, session_id):
     """Database query to verify if a session ID exists."""
@@ -188,26 +186,32 @@ def process_event(cursor, log, reader):
     if not ts:
         return False
 
-    # Route based on event type
+    ip_id = get_or_create_attacker(cursor, ip, reader)
+    touch_attacker(cursor, ip_id, ts)
+
+    # Route based on event type. For auth/command events, create the session if
+    # the daemon started after the original cowrie.session.connect line.
     if event_id == 'cowrie.session.connect':
-        ip_id = get_or_create_attacker(cursor, ip, reader)
         insert_session(cursor, session_id, ip_id, ts)
         return True
         
     elif event_id in ['cowrie.login.failed', 'cowrie.login.success']:
-        if check_session_exists(cursor, session_id):
-            handle_auth_attempt(cursor, log, session_id, ts)
-            return True
+        if not check_session_exists(cursor, session_id):
+            insert_session(cursor, session_id, ip_id, ts)
+        handle_auth_attempt(cursor, log, session_id, ts)
+        return True
             
     elif event_id == 'cowrie.command.input':
-        if check_session_exists(cursor, session_id):
-            handle_command_input(cursor, log, session_id, ts)
-            return True
+        if not check_session_exists(cursor, session_id):
+            insert_session(cursor, session_id, ip_id, ts)
+        handle_command_input(cursor, log, session_id, ts)
+        return True
             
     elif event_id == 'cowrie.session.closed':
-        if check_session_exists(cursor, session_id):
-            handle_session_closed(cursor, log, session_id, ts)
-            return True
+        if not check_session_exists(cursor, session_id):
+            insert_session(cursor, session_id, ip_id, ts)
+        handle_session_closed(cursor, log, session_id, ts)
+        return True
 
     return False
 

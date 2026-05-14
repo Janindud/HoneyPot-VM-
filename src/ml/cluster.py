@@ -22,8 +22,8 @@ DB_CONFIG = {
 }
 
 MODEL_DIR = os.getenv("MODEL_DIR", os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.getenv("KMEANS_MODEL_PATH", os.path.join(MODEL_DIR, "model.pkl"))
-SCALER_PATH = os.getenv("KMEANS_SCALER_PATH", os.path.join(MODEL_DIR, "scaler.pkl"))
+MODEL_PATH = os.getenv("KMEANS_MODEL_PATH", os.path.join(MODEL_DIR, "kmeans_model.pkl"))
+SCALER_PATH = os.getenv("KMEANS_SCALER_PATH", os.path.join(MODEL_DIR, "feature_scaler.pkl"))
 MIN_SAMPLES_FOR_SILHOUETTE = 15
 
 # ==========================================
